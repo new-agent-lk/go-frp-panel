@@ -83,6 +83,8 @@ jobs:
               differ "./pre_release_files" "./release/packages" ${{ github.ref_name }}
               echo "release文件列表："
               ls -lh ./release/packages
+              # differ 并进历史版本后重生成清单，index.json 才会累积多版本
+              ./build.sh manifest
           else
               echo "./pre_release_files不存在"
           fi

@@ -462,19 +462,22 @@ function buildFrpcAndFrpsAll() {
 
 # 生成客户端版本清单 index.json。go-service 只会请求 /releases/latest，
 # 面板靠这份清单才能列出多个 acfrpc 版本。
+# 扫 packages 而不是 release/frpc：differ 会把历史版本的二进制并进 packages，
+# 只有扫全量才能让清单累积多版本（版本号从文件名解析，不再依赖当前 $version）。
 function writeClientManifest() {
   local out=./release/packages/index.json
   local first=1
   echo "[" >"$out"
-  for f in ./release/frpc/*; do
+  for f in ./release/packages/acfrpc_*; do
     [ -f "$f" ] || continue
     local name=$(basename "$f")
     local sum=$(sha256sum "$f" | cut -d' ' -f1)
     local platform=$(echo "$name" | awk -F'_' '{print $(NF-1)"_"$NF}')
     platform=${platform%.exe}
+    local ver=$(echo "$name" | awk -F'_' '{print $2}')
     if [ $first -eq 1 ]; then first=0; else echo "," >>"$out"; fi
     printf '  {"version":"%s","platform":"%s","file":"%s","sha256":"%s","minPanelVersion":""}' \
-      "${version}" "$platform" "$name" "$sum" >>"$out"
+      "$ver" "$platform" "$name" "$sum" >>"$out"
   done
   echo "" >>"$out"
   echo "]" >>"$out"
@@ -657,6 +660,7 @@ function bootstrap() {
 #  writeVersionGoFile
   case $1 in
   github) (githubActions) ;;
+  manifest) (writeClientManifest) ;;
   version) (writeVersionGoFile) ;;
     *) (main)  ;;
   esac
