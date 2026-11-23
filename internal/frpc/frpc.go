@@ -3,6 +3,7 @@ package frpc
 import (
 	"context"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"os"
 	"os/signal"
@@ -133,7 +134,10 @@ func (this *frpc) Run() error {
 			this.mainFrpcClient.err = e
 		}
 		return e
-	}, retry.Delay(time.Second*5), retry.Attempts(0))
+	}, retry.Delay(time.Second*5), retry.Attempts(0), retry.RetryIf(func(e error) bool {
+		// frp v0.72 起 Service 关闭后 Run 立刻返回 context.Canceled；此时重试没有意义
+		return !errors.Is(e, context.Canceled)
+	}))
 
 	if err != nil {
 		z.Error("启动失败", err)

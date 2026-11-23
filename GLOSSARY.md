@@ -30,7 +30,13 @@ release 里随包发布的 `clients/index.json`，描述"有哪些 acfrpc 版本
 ## 版本
 
 **frp 版本**
-编译期依赖的 `github.com/fatedier/frp` 版本（`go.mod`），决定配置模型与 API 形态。
+编译期依赖的 `github.com/fatedier/frp` 版本（`go.mod`），决定配置模型与 API 形态。当前 `v0.72.0`（2026-11-23 由 v0.70.0 升级，见 `docs/adr/0002-frp-upgrade-v072.md`）。它在 `/api/version` 里以 `frpcVersion` 字段暴露（`pkg/utils/utils.go:309` 的 `version.Full()`），是编译期常量，运行时不可变——升级 frp 必须重编二进制。
+
+**跨版本互通**
+不同 frp 版本的服务端与客户端能否互连。本仓口径：v0.70 与 v0.72 双向全通，frp 源码无版本闸门，兼容底线在 v0.50.0（runID 强制），wire protocol 默认值两版都是 `"v1"`。因此面板与 acfrpc 不要求同时升级；服务端日志的 `client login info: ... version [x.y.z]` 是观测在跑旧版客户端的现成手段。
+
+**破坏面**
+一次依赖升级可能打破的调用点集合。分两类：编译期（签名、字段、包路径变化，编译器会报）与非编译期（反射、配置 schema、线协议、行为语义，编译器不报）。本仓升级 frp 时的非编译期风险点是 `pkg/utils/reflectutils.go:31` 的 `GetPointerInstance[T]`——它用 `FieldByName("webServer")` 反射取 frp 的私有字段，字段改名不会导致编译失败，只会让运行时拿到 nil。
 
 **acfrpc 版本**
 分发出去的那个二进制的版本。与面板版本、frp 版本三者独立。

@@ -61,7 +61,7 @@ jobs:
       - name: 设置Golang版本
         uses: actions/setup-go@v5
         with:
-          go-version: '1.23'
+          go-version: '1.26'
       - name: 编译Golang程序
         run: |
           chmod +x ./build.sh
