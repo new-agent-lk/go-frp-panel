@@ -6,6 +6,10 @@ on:
   push:
     tags:
       - 'v[0-99]*.[0-99]*.[0-99]*'  # 匹配所有以 v 开头的标签（如 v1.0.0）
+# goreleaser 要建 release、传资产，需要写权限；用自动可用的 GITHUB_TOKEN，
+# 不依赖需要人工配置的 GH_TOKEN secret。
+permissions:
+  contents: write
 env:
   DELETE_RELEASE: yes
 jobs:
@@ -94,4 +98,4 @@ jobs:
           version: latest
           args: release --clean --release-notes=./Release.md --skip=validate
         env:
-          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
