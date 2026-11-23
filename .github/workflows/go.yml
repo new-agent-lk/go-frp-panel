@@ -58,10 +58,15 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release download "$PREV_VERSION" \
-            -p 'acfrp*' \
-            --dir pre_release_files
-          ls -lh pre_release_files
+          # 取当前最新 release 作为上一版（本步在 goreleaser 之前跑，此时最新即上一版）
+          PREV_VERSION=$(gh release list --limit 1 --json tagName --jq '.[0].tagName')
+          echo "上一版：${PREV_VERSION:-（无，首次发版）}"
+          if [ -n "$PREV_VERSION" ]; then
+            gh release download "$PREV_VERSION" \
+              -p 'acfrp*' \
+              --dir pre_release_files
+            ls -lh pre_release_files
+          fi
       - name: 设置Golang版本
         uses: actions/setup-go@v5
         with:
@@ -70,13 +75,9 @@ jobs:
         run: |
           chmod +x ./build.sh
           ./build.sh github ${{ github.ref_name }}
-      - name: 下载上一个版本
+      - name: 合并历史版本并重生成清单
         continue-on-error: true  # 即使失败也不中断工作流
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          chmod +x ./build.sh
-          ./build.sh github ${{ github.ref_name }}
           if [ -e "./pre_release_files" ]; then
               go install github.com/xxl6097/go-service/cmd/differ@latest
               echo "./pre_release_files ./release ${{ github.ref_name }}"
