@@ -285,6 +285,16 @@
             v-model="clientForm.ops"
             placeholder="请选择"
           />
+          <el-button
+            v-if="selectedVersion && selectedVersion !== activeVersion"
+            type="primary"
+            link
+            @click="setActiveVersion(selectedVersion)"
+            >设为当前版本
+          </el-button>
+          <el-button v-if="activePrevious" type="warning" link @click="rollbackActive"
+            >回滚上一版
+          </el-button>
         </el-form-item>
 
         <el-form-item label="客户端下载地址：" v-if="options.length <= 0">
@@ -495,6 +505,13 @@ const innerBtn = ref<InstanceType<typeof ElButton>>()
 const innerGenBtn = ref<InstanceType<typeof ElButton>>()
 // const ops = ref({})
 const options = ref([])
+// 当前激活的 acfrpc 版本与它的上一版，只用于显示按钮与回滚
+const activeVersion = ref<string>('')
+const activePrevious = ref<string>('')
+// cascader 的取值是 [版本组, 平台]，这里只要组名
+const selectedVersion = computed(
+  () => (clientForm.value.ops as any)?.[0] || '',
+)
 // const isLoading = ref<boolean>(false)
 
 const drawertextarea = ref('')
@@ -1385,14 +1402,37 @@ const fetchListData = () => {
 // 获取平台数据
 const fetchOptions = () => {
   get('', '../api/client/get', null).then((data: any) => {
-    console.log('clients', data)
     if (data) {
-      options.value = JSON.parse(JSON.stringify(data))
+      // 激活版本由服务端标 active，这里只在标签上补一句，不动 el-cascader 的取值
+      options.value = JSON.parse(JSON.stringify(data)).map((o: any) => ({
+        ...o,
+        label: o.active ? `${o.label} · 当前` : o.label,
+      }))
     } else {
       options.value = []
     }
   })
 }
+
+const fetchActive = () => {
+  get('', '../api/client/active', null).then((data: any) => {
+    activeVersion.value = data?.version || ''
+    activePrevious.value = data?.previous || ''
+  })
+}
+
+// version 传空表示回滚到上一版
+const switchActive = (version: string) => {
+  post('切换中', '../api/client/active', JSON.stringify({ version }))
+    .then(() => {
+      fetchActive()
+      fetchOptions()
+    })
+    .catch(() => {})
+}
+
+const setActiveVersion = (version: string) => switchActive(version)
+const rollbackActive = () => switchActive('')
 
 onUpdated(() => {
   fetchOptions()
@@ -1410,6 +1450,7 @@ onMounted(() => {
 
 fetchListData()
 fetchOptions()
+fetchActive()
 fetchServerData()
 </script>
 
