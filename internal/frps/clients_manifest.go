@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/xxl6097/glog/pkg/z"
@@ -44,6 +45,10 @@ func clientManifestUrls(dir string) []string {
 	urls := make([]string, 0, len(assets))
 	for _, a := range assets {
 		if a.Version == "" || a.File == "" {
+			continue
+		}
+		// .patch 是 differ 生成的增量包，不是可安装的客户端；已发布的旧清单里混进过它
+		if strings.Contains(a.File, ".patch") {
 			continue
 		}
 		urls = append(urls, fmt.Sprintf("https://github.com/%s/%s/releases/download/%s/%s",

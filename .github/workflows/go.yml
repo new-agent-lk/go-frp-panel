@@ -86,6 +86,9 @@ jobs:
               echo "./release/packages文件列表："
               ls -lh ./release/packages
               differ "./pre_release_files" "./release/packages" ${{ github.ref_name }}
+              # differ 把旧版本的完整二进制换成了 .patch 增量包，旧版本会从 release 里消失，
+              # 面板就只剩一版可选。把上一版的完整二进制拷回来，多版本才能累积。
+              find ./pre_release_files -type f ! -name '*.patch' -exec cp -f {} ./release/packages/ \;
               echo "release文件列表："
               ls -lh ./release/packages
               # differ 并进历史版本后重生成清单，index.json 才会累积多版本

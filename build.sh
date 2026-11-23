@@ -470,6 +470,8 @@ function writeClientManifest() {
   echo "[" >"$out"
   for f in ./release/packages/acfrpc_*; do
     [ -f "$f" ] || continue
+    # differ 会生成 .patch 增量包，它不是可安装的客户端，不能进清单
+    case "$f" in *.patch) continue ;; esac
     local name=$(basename "$f")
     local sum=$(sha256sum "$f" | cut -d' ' -f1)
     local platform=$(echo "$name" | awk -F'_' '{print $(NF-1)"_"$NF}')
