@@ -295,7 +295,8 @@ version::get_version_vars() {
 }
 
 function testModule() {
-  repo_url=${module}
+  # 发布源以 git remote 为准（fork 后无需改 go.mod 的 module 路径）
+  repo_url=$(git remote get-url origin 2>/dev/null || echo "${module}")
   # 统一处理协议前缀和.git后缀
   clean_url=$(echo "$repo_url" | sed 's/^git@github.com://;s/^https:\/\///;s/\.git$//')
   # 分割用户名和仓库名
@@ -459,6 +460,26 @@ function buildFrpcAndFrpsAll() {
   echo "所有任务完成"
 }
 
+# 生成客户端版本清单 index.json。go-service 只会请求 /releases/latest，
+# 面板靠这份清单才能列出多个 acfrpc 版本。
+function writeClientManifest() {
+  local out=./release/packages/index.json
+  local first=1
+  echo "[" >"$out"
+  for f in ./release/frpc/*; do
+    [ -f "$f" ] || continue
+    local name=$(basename "$f")
+    local sum=$(sha256sum "$f" | cut -d' ' -f1)
+    local platform=$(echo "$name" | awk -F'_' '{print $(NF-1)"_"$NF}')
+    platform=${platform%.exe}
+    if [ $first -eq 1 ]; then first=0; else echo "," >>"$out"; fi
+    printf '  {"version":"%s","platform":"%s","file":"%s","sha256":"%s","minPanelVersion":""}' \
+      "${version}" "$platform" "$name" "$sum" >>"$out"
+  done
+  echo "" >>"$out"
+  echo "]" >>"$out"
+}
+
 function githubActions() {
   echo "当前版本号:${version}"
   go get github.com/josephspurrier/goversioninfo/cmd/goversioninfo
@@ -469,6 +490,7 @@ function githubActions() {
   cp -f ./release/frpc/* ./release/packages
   cp -f ./release/frps/* ./release/packages
   cp -f ./github_proxy.json ./release/packages
+  writeClientManifest
 }
 
 function buildFrpcMenu() {
@@ -488,7 +510,7 @@ function buildFrpsMenu() {
 }
 
 function github_release() {
-    REPO="xxl6097/go-frp-panel"  # 替换为你的GitHub仓库
+    REPO="new-agent-lk/go-frp-panel"  # 替换为你的GitHub仓库
     TAG="${version}"  # 替换为你的标签
     RELEASE_NAME="${version}"  # 替换为你的发布名称
     DESCRIPTION="基于GO语言的网络代理服务程序"  # 替换为你的发布描述

@@ -2,6 +2,7 @@ package frps
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -71,7 +72,7 @@ func (this *frps) apiClientCMD(w http.ResponseWriter, r *http.Request) {
 	if body == nil {
 		msg := "body is nil"
 		z.Error(msg)
-		res.Err(fmt.Errorf(msg))
+		res.Err(errors.New(msg))
 		return
 	}
 	var msg iface2.Message[any]

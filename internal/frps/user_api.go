@@ -153,37 +153,6 @@ func (this *frps) apiUserGet(w http.ResponseWriter, r *http.Request) {
 	res.Sucess("数据获取成功", data)
 }
 
-func (this *frps) apiClientGet(w http.ResponseWriter, r *http.Request) {
-	res, f := comm2.Response(r)
-	defer f(w)
-	binPath, err := os.Executable()
-	if err != nil {
-		res.Error(fmt.Sprintf("获取当前可执行文件路径出错: %v\n", err))
-		z.Error(res.Msg)
-		return
-	}
-	configDir := filepath.Dir(binPath)
-	configPath := filepath.Join(configDir, "clients")
-	//z.Infof("扫描路径:%s", configPath)
-	nodes := utils.GetNodes(configPath)
-	//if nodes == nil || len(nodes) == 0 {
-	//	nodes = utils.ToTree("", this.frpcGithubDownloadUrls)
-	//}
-	urls := github.Api().GetDownloadUrls(func(version string, assets *model3.Assets) bool {
-		if assets != nil &&
-			strings.HasPrefix(assets.Name, "acfrpc") &&
-			!strings.Contains(assets.Name, ".patch") {
-			return true
-		}
-		return false
-	})
-	if urls != nil && len(urls) > 0 {
-		nodes = utils.ToTree("", urls)
-	}
-	res.Data = nodes
-	//z.Infof("扫描结果:%v", res.Data)
-}
-
 func (this *frps) apiClientListGet(w http.ResponseWriter, r *http.Request) {
 	res, f := comm2.Response(r)
 	defer f(w)

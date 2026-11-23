@@ -53,7 +53,7 @@
 
           <a
             class="github-link"
-            href="https://github.com/xxl6097/go-frp-panel"
+            href="https://github.com/new-agent-lk/go-frp-panel"
             target="_blank"
             aria-label="GitHub"
           >

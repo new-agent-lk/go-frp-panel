@@ -104,3 +104,6 @@ assets/html/vue-admin/*.ntvs*
 assets/html/vue-admin/*.njsproj
 assets/html/vue-admin/*.sln
 
+
+# dsh 技能套件本地缓存
+.dsh-mattskillsdeck-cache/
